@@ -1,6 +1,8 @@
 services:
   market-horizon:
     build: .
+    # No auth; intended for local/trusted-network use only. Do not expose this
+    # port directly to the Internet — front it with an authenticating proxy.
     ports:
       - "8501:8501"
     environment:

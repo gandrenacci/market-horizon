@@ -1,0 +1,29 @@
+# Optional configuration file for Market Horizon.
+#
+# Copy to `market_horizon.toml` to use it (the real file is gitignored). Values
+# here are overridden by `.env` and `MARKET_HORIZON_`-prefixed environment
+# variables. Every key is optional; omitted keys fall back to built-in defaults.
+# Point at a different file with the MARKET_HORIZON_CONFIG_FILE env var.
+
+[market_horizon]
+# Where local data (and the default SQLite DB) live.
+app_data_dir = ".data"
+# Explicit SQLite path; defaults to <app_data_dir>/market_horizon.db when unset.
+# database_path = ".data/market_horizon.db"
+
+# Market data provider (only "yfinance" ships today).
+default_data_provider = "yfinance"
+
+# History pulled on a ticker's first sync.
+initial_history_period = "3y"
+# Calendar days re-requested on incremental sync so the provider can correct recent data.
+sync_overlap_days = 7
+
+# Benchmark used for relative comparisons.
+default_benchmark = "^GSPC"
+
+log_level = "INFO"
+
+# Trading days/year for volatility annualization.
+stock_annualization_factor = 252
+crypto_annualization_factor = 365

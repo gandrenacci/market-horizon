@@ -1,11 +1,43 @@
-.data/
+# ── Secrets / env ─────────────────────────────────────────────────────────────
 .env
+.env.*
+!.env.example
+market_horizon.toml
+
+# ── Python / dependencies ─────────────────────────────────────────────────────
 .venv/
-.coverage
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
 __pycache__/
+*.py[cod]
+*.egg-info/
+
+# ── Build output ──────────────────────────────────────────────────────────────
+dist/
+build/
+
+# ── Test / coverage ───────────────────────────────────────────────────────────
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# ── Type / lint caches ────────────────────────────────────────────────────────
+.ruff_cache/
+.mypy_cache/
+
+# ── Local data (SQLite) & app runtime ─────────────────────────────────────────
+.data/
 *.db
 *.sqlite
-*.egg-info/
+.uat/
+*.log
+*.pid
+*.tmp
+
+# ── VCS / OS / editors / agents ───────────────────────────────────────────────
+.git/
+.DS_Store
+.idea/
+.vscode/
+.claude/
+.agents/
+mydocs/

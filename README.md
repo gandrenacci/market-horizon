@@ -30,8 +30,11 @@ Configuration is loaded from built-in defaults, an optional `market_horizon.toml
 `.env`, and environment variables.
 
 ```bash
-cp .env.example .env
+cp .env.example .env                            # environment-variable config
+cp market_horizon.toml.example market_horizon.toml   # optional TOML config
 ```
+
+The real `.env` and `market_horizon.toml` are gitignored; commit only the `*.example` files.
 
 Useful environment variables:
 
@@ -74,6 +77,12 @@ docker compose up --build
 ```
 
 The app will be available at <http://localhost:8501>.
+
+> [!WARNING]
+> The container ships with **no authentication** and binds to `0.0.0.0`. It is intended for local
+> or trusted-network use only. Do **not** publish port `8501` directly to the Internet — anyone who
+> reaches it could edit the watchlist and drive traffic to Yahoo Finance. Place it behind a reverse
+> proxy that provides authentication and TLS if remote access is required.
 
 ## Scope
 

@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Local config (may hold personal paths/settings); ship the *.example instead
+market_horizon.toml
+
 # ── Python / dependencies ─────────────────────────────────────────────────────
 .venv/
 __pycache__/
