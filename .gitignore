@@ -1,0 +1,41 @@
+# ── Secrets / env ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Python / dependencies ─────────────────────────────────────────────────────
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ── Build output ──────────────────────────────────────────────────────────────
+dist/
+build/
+
+# ── Test / coverage ───────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# ── Type / lint caches ────────────────────────────────────────────────────────
+.ruff_cache/
+.mypy_cache/
+
+# ── Local data (SQLite) & app runtime ─────────────────────────────────────────
+.data/
+*.db
+*.sqlite
+.uat/
+*.log
+*.pid
+*.tmp
+
+# ── OS / editors / agents ─────────────────────────────────────────────────────
+.DS_Store
+.idea/
+.vscode/
+.claude/
+.agents/
+/mydocs

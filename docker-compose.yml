@@ -1,0 +1,14 @@
+services:
+  market-horizon:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      MARKET_HORIZON_APP_DATA_DIR: /data
+      MARKET_HORIZON_DATABASE_PATH: /data/market_horizon.db
+    volumes:
+      - market-horizon-data:/data
+
+volumes:
+  market-horizon-data:
+

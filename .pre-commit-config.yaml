@@ -1,0 +1,39 @@
+# Pre-commit hooks for the repository. Install once with `pre-commit install`,
+# then they run on staged files at commit time. Apply to everything with
+# `pre-commit run --all-files`. Versions are pinned deliberately (no main/latest).
+exclude: |
+  (?x)^(
+    uv\.lock
+  )$
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ['--maxkb=2048']
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Python lint + format. Pinned to match the project ruff.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.18
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: \.py$
+      - id: ruff-format
+        files: \.py$
+
+  # Secret scanning across the whole repo.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks

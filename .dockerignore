@@ -1,0 +1,11 @@
+.data/
+.env
+.venv/
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.db
+*.sqlite
+*.egg-info/
