@@ -7,6 +7,8 @@ from math import sqrt
 import numpy as np
 import pandas as pd
 
+from market_horizon.asset_types import is_continuous
+
 
 @dataclass(frozen=True)
 class TrendSnapshot:
@@ -92,9 +94,7 @@ def compute_metrics(
     sma_50_series = close.rolling(50, min_periods=50).mean()
     sma_200_series = close.rolling(200, min_periods=200).mean()
     annualization = (
-        crypto_annualization_factor
-        if asset_type.lower() == "cryptocurrency"
-        else stock_annualization_factor
+        crypto_annualization_factor if is_continuous(asset_type) else stock_annualization_factor
     )
     latest_date = close.index[-1]
     latest_price = _last_float(close)

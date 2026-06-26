@@ -6,6 +6,7 @@ from typing import Any
 import pandas as pd
 import yfinance as yf
 
+from market_horizon.asset_types import classify
 from market_horizon.data.provider import AssetMetadata, PriceFrame
 
 
@@ -22,7 +23,7 @@ class YFinanceProvider:
         return AssetMetadata(
             symbol=normalized,
             name=info.get("longName") or info.get("shortName"),
-            asset_type=_asset_type(info, normalized),
+            asset_type=classify(normalized, info.get("quoteType")),
             currency=info.get("currency"),
             exchange=info.get("exchange") or info.get("fullExchangeName"),
         )
@@ -68,18 +69,3 @@ def normalize_symbol(symbol: str) -> str:
     """Normalize user-entered ticker symbols for Yahoo Finance."""
 
     return symbol.strip().upper()
-
-
-def _asset_type(info: dict[str, Any], symbol: str) -> str:
-    quote_type = str(info.get("quoteType") or "").lower()
-    if quote_type in {"etf", "mutualfund"}:
-        return "ETF"
-    if quote_type in {"cryptocurrency", "crypto"}:
-        return "Cryptocurrency"
-    if quote_type in {"equity", "stock"}:
-        return "Stock"
-    # Fall back to the symbol shape only when the provider gives no usable quoteType,
-    # so hyphenated equities such as BRK-B are not mistaken for crypto pairs.
-    if "-" in symbol:
-        return "Cryptocurrency"
-    return "Stock"

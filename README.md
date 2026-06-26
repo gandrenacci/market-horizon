@@ -1,8 +1,9 @@
 # Market Horizon
 
-Market Horizon is a local-first dashboard for monitoring stocks, ETFs, and cryptocurrencies.
-It downloads daily OHLCV data through Yahoo Finance, stores it in SQLite, and presents
-performance, trend, momentum, and risk metrics across short, medium, and long horizons.
+Market Horizon is a local-first dashboard for monitoring stocks, ETFs, funds, indices,
+cryptocurrencies, FX pairs, and futures. It downloads daily OHLCV data through Yahoo Finance,
+stores it in SQLite, and presents performance, trend, momentum, and risk metrics across short,
+medium, and long horizons.
 
 This project is informational only. It does not provide trading recommendations, forecasts,
 broker integration, alerts, or portfolio accounting.
@@ -16,13 +17,36 @@ uv run streamlit run app.py
 ```
 
 On first startup, the app creates the local SQLite database and a default watchlist. The
-watchlist starts empty and the UI asks for initial symbols such as:
+watchlist starts empty and the UI asks for initial symbols. A good mixed starter set that
+exercises every asset type is:
 
 ```text
-AAPL, CSSX5E.MI, BTC-EUR
+QQQM, BTC-USD, GC=F, NFLX, ^IXIC, ^GSPC
 ```
 
-For Yahoo Finance cryptocurrency pairs, use symbols like `BTC-EUR` or `ETH-EUR`.
+For Yahoo Finance cryptocurrency pairs, use symbols like `BTC-USD` or `ETH-EUR`.
+
+## Asset Types
+
+Yahoo Finance is inconsistent about instrument classification — it often reports
+`quoteType = EQUITY` (or nothing) for indices, FX pairs, and futures. Market Horizon
+normalizes everything into a small, stable taxonomy in `src/market_horizon/asset_types.py`,
+so the metrics, filters, and UI stay consistent regardless of provider quirks.
+
+| Type             | Example symbols          | How it is detected                                   |
+| ---------------- | ------------------------ | ---------------------------------------------------- |
+| `Index`          | `^IXIC`, `^GSPC`         | Symbol starts with `^` (or `quoteType = index`)      |
+| `Future`         | `GC=F`, `ES=F`           | Symbol ends with `=F` (or `quoteType = future`)      |
+| `Forex`          | `EURUSD=X`               | Symbol ends with `=X` (or `quoteType = currency`)    |
+| `ETF`            | `QQQM`, `VOO`            | `quoteType = etf`                                    |
+| `Fund`           | `VTSAX`, `VFIAX`         | `quoteType = mutualfund`                             |
+| `Cryptocurrency` | `BTC-USD`, `ETH-EUR`     | `quoteType = cryptocurrency`, or a hyphenated symbol |
+| `Stock`          | `NFLX`, `AAPL`, `BRK-B`  | `quoteType = equity`, and the default fallback       |
+
+Symbol-shape rules (`^`, `=F`, `=X`) take precedence because Yahoo mislabels those
+instruments; `quoteType` is trusted for everything else. The stored classification is
+refreshed on every sync, so existing assets are re-classified automatically after a
+**Sync all** or **Refresh** when the rules change.
 
 ## Configuration
 

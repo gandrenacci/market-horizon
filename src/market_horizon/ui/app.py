@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from market_horizon import asset_types
 from market_horizon.analytics.metrics import (
     MetricsSnapshot,
     TrendSnapshot,
@@ -696,7 +697,11 @@ def _inject_styles() -> None:
 
         .mh-type.t-stock { background: #e8f1ff; color: var(--mh-blue); }
         .mh-type.t-etf { background: #f0ecff; color: #6d42e8; }
+        .mh-type.t-fund { background: #eaf0fb; color: #3a4fb8; }
+        .mh-type.t-index { background: #e6f7f1; color: #0f7a5a; }
         .mh-type.t-crypto { background: #fff3df; color: #b54708; }
+        .mh-type.t-forex { background: #fdeef5; color: #b03570; }
+        .mh-type.t-future { background: #eef1f4; color: #4a5568; }
         .mh-type.t-default { background: #f1f3f7; color: var(--mh-muted); }
 
         .mh-vol { align-items: center; display: flex; gap: 0.55rem; min-width: 130px; }
@@ -813,7 +818,7 @@ def _render_watchlist(
     toolbar_cols = st.columns([1.6, 1.5, 0.8, 0.8])
     filter_type = toolbar_cols[0].segmented_control(
         "Filter",
-        options=["All", "Stocks", "ETFs", "Crypto"],
+        options=["All", "Stocks", "ETFs", "Funds", "Indices", "Crypto"],
         default="All",
         label_visibility="collapsed",
     )
@@ -1003,12 +1008,9 @@ def _watchlist_summary(
 
 def _filter_table(table: pd.DataFrame, filter_type: str, search: str) -> pd.DataFrame:
     filtered = table
-    if filter_type == "Stocks":
-        filtered = filtered[filtered["Type"] == "Stock"]
-    elif filter_type == "ETFs":
-        filtered = filtered[filtered["Type"] == "ETF"]
-    elif filter_type == "Crypto":
-        filtered = filtered[filtered["Type"] == "Cryptocurrency"]
+    canonical = asset_types.FILTER_OPTIONS.get(filter_type)
+    if canonical is not None:
+        filtered = filtered[filtered["Type"] == canonical]
 
     query = search.strip().casefold()
     if query:
@@ -1107,12 +1109,8 @@ def _trend_pill(label: str) -> str:
 
 
 def _type_pill(asset_type: str) -> str:
-    css = {
-        "Stock": "t-stock",
-        "ETF": "t-etf",
-        "Cryptocurrency": "t-crypto",
-    }.get(asset_type, "t-default")
-    label = "Crypto" if asset_type == "Cryptocurrency" else asset_type
+    css = asset_types.pill_css(asset_type)
+    label = asset_types.pill_label(asset_type)
     return f'<span class="mh-type {css}">{escape(label)}</span>'
 
 
@@ -1376,13 +1374,10 @@ def _sort_table(table: pd.DataFrame, sort_by: str, ascending: bool) -> pd.DataFr
 
 
 def _filter_assets(assets: list[Asset], filter_type: str) -> list[Asset]:
-    if filter_type == "Stocks":
-        return [asset for asset in assets if asset.asset_type == "Stock"]
-    if filter_type == "ETFs":
-        return [asset for asset in assets if asset.asset_type == "ETF"]
-    if filter_type in {"Cryptocurrencies", "Crypto"}:
-        return [asset for asset in assets if asset.asset_type == "Cryptocurrency"]
-    return assets
+    canonical = asset_types.FILTER_OPTIONS.get(filter_type)
+    if canonical is None:
+        return assets
+    return [asset for asset in assets if asset.asset_type == canonical]
 
 
 def _render_asset_header(
@@ -1670,7 +1665,7 @@ def _annualized_volatility(
         return None
     annualization = (
         crypto_annualization_factor
-        if asset_type.lower() == "cryptocurrency"
+        if asset_types.is_continuous(asset_type)
         else stock_annualization_factor
     )
     value = returns.std()

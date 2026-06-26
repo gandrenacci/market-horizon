@@ -4,8 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Market Horizon is a local-first Streamlit dashboard for monitoring stocks, ETFs, and crypto. It
-downloads daily OHLCV data from Yahoo Finance (`yfinance`), stores it in local SQLite, and renders
+Market Horizon is a local-first Streamlit dashboard for monitoring stocks, ETFs, funds, indices,
+crypto, FX pairs, and futures. It downloads daily OHLCV data from Yahoo Finance (`yfinance`),
+stores it in local SQLite, and renders
 performance, trend, momentum, and risk metrics across short/medium/long horizons. It is
 informational only — no trading signals, forecasts, broker integration, alerts, or portfolio
 accounting. The Streamlit UI has four pages — Watchlist, Asset Analysis, Compare, and Learn.
@@ -35,12 +36,21 @@ pinned in `.pre-commit-config.yaml` — install with `pre-commit install`, run w
 ## Architecture
 
 Layered with dependency injection; the dependency direction is one-way:
-`ui → services → {data provider, repository} → db`. Analytics and config are leaf modules.
+`ui → services → {data provider, repository} → db`. Analytics, config, and `asset_types` are leaf
+modules.
 
+- **`asset_types.py`** — Single source of truth for the canonical asset taxonomy (`Stock`, `ETF`,
+  `Fund`, `Index`, `Cryptocurrency`, `Forex`, `Future`). `classify(symbol, quote_type)` applies
+  symbol-shape rules first — `^…` → Index, `…=F` → Future, `…=X` → Forex — because Yahoo mislabels
+  those as `EQUITY`/empty, then trusts `quoteType`, falling back to "hyphenated ⇒ Crypto, else Stock"
+  only when `quoteType` is missing (so `BRK-B` stays a stock). Also owns the UI pill label/CSS map,
+  the `FILTER_OPTIONS` chip map, and `is_continuous` (the 365-vs-252 volatility switch). Provider,
+  analytics, and UI all import from here — never re-hardcode type strings.
 - **`data/provider.py`** — `MarketDataProvider` is a `Protocol` (structural typing). Real impl is
   `data/yfinance_provider.py`; tests inject a `FakeProvider` that satisfies the same shape. Any new
-  provider just needs `get_metadata` and `get_history`. `get_history` must return a DataFrame
-  indexed by `date` with normalized lower-case columns `open, high, low, close, adj_close, volume`.
+  provider just needs `get_metadata` and `get_history`. `get_metadata` sets `asset_type` via
+  `asset_types.classify`. `get_history` must return a DataFrame indexed by `date` with normalized
+  lower-case columns `open, high, low, close, adj_close, volume`.
 - **`db/repository.py`** — `MarketRepository` is the only place that touches the DB. It takes a
   `sessionmaker` and opens a fresh session per method. `upsert_prices` deduplicates on
   `(asset_id, date)`; `_none_or_float` falls back `adj_close → close`.
@@ -48,11 +58,14 @@ Layered with dependency injection; the dependency direction is one-way:
   **a single ticker's failure must never abort the batch.** `sync_asset` catches all exceptions and
   records a `failed` `TickerSyncResult` instead of raising. Incremental sync re-requests from
   `latest_price_date - sync_overlap_days` (default 7) so the provider can correct recent data;
-  initial sync uses `initial_history_period` (default `3y`).
+  initial sync uses `initial_history_period` (default `3y`). Non-initial syncs also do a
+  best-effort `_refresh_metadata` (re-`upsert_asset`) so a stored asset is re-classified when the
+  rules change — a metadata failure is swallowed and never fails the price sync.
 - **`analytics/metrics.py`** — Pure functions over a price DataFrame; no I/O. `compute_metrics`
   returns a frozen `MetricsSnapshot`. **Insufficient history yields `None` / `"Unavailable"`, never
   a misleading value** — preserve this when editing. Uses `adj_close` when present, else `close`.
-  Volatility annualization is asset-type dependent: 252 for stocks/ETFs, 365 for crypto.
+  Volatility annualization is asset-type dependent via `asset_types.is_continuous`: 365 for crypto,
+  252 for everything else.
 - **`config/settings.py`** — `Settings` (pydantic-settings). Precedence: env vars > optional
   `market_horizon.toml` > defaults. Env vars use the `MARKET_HORIZON_` prefix. `load_settings()` is
   `lru_cache`d and creates data dirs as a side effect. The DB path is `resolved_database_path`.

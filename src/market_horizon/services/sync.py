@@ -95,6 +95,8 @@ class SyncService:
         """Synchronize a single asset without raising provider failures to callers."""
 
         started = perf_counter()
+        if not initial:
+            self._refresh_metadata(asset)
         try:
             latest_date = None if initial else self._repository.latest_price_date(asset.id)
             start = (
@@ -140,3 +142,17 @@ class SyncService:
             latest_date=result.latest_date,
         )
         return result
+
+    def _refresh_metadata(self, asset: Asset) -> None:
+        """Re-fetch and persist provider metadata (name, asset type, ...) for an asset.
+
+        Keeps a stored asset's classification current when provider/logic changes (e.g. an
+        index previously saved as a stock). Best-effort: a metadata failure must never turn
+        an otherwise-healthy price sync into a failure, so errors are swallowed here.
+        """
+
+        try:
+            metadata = self._provider.get_metadata(asset.symbol)
+        except Exception:  # noqa: BLE001 - metadata refresh is best-effort.
+            return
+        self._repository.upsert_asset(metadata)

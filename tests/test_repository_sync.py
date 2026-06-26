@@ -3,6 +3,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
+from market_horizon.asset_types import classify
 from market_horizon.config import Settings
 from market_horizon.data.provider import AssetMetadata
 from market_horizon.db import create_session_factory, init_db
@@ -19,7 +20,7 @@ class FakeProvider:
         normalized = symbol.strip().upper()
         if normalized in self.fail_symbols:
             raise ValueError("invalid symbol")
-        asset_type = "Cryptocurrency" if "-" in normalized else "Stock"
+        asset_type = classify(normalized, None)
         return AssetMetadata(normalized, f"{normalized} Name", asset_type, "USD", "TEST")
 
     def get_history(
@@ -129,6 +130,28 @@ def test_incremental_sync_uses_overlap_and_updates_existing_rows(
     assert result.status == "success"
     assert result.updated_rows == 3
     assert provider.starts[-1] == date(2023, 12, 27)
+
+
+def test_sync_refreshes_stale_asset_classification(
+    repository: MarketRepository,
+) -> None:
+    provider = FakeProvider()
+    service = SyncService(
+        provider=provider,
+        repository=repository,
+        settings=Settings(app_data_dir=".", database_path=":memory:"),
+    )
+    # An index added before the classification fix is stored as a stock.
+    repository.upsert_asset(AssetMetadata("^GSPC", "S&P 500", "Stock", "USD", "TEST"))
+    asset = repository.get_asset_by_symbol("^GSPC")
+    assert asset is not None
+    repository.add_to_default_watchlist(asset.id)
+
+    service.sync_asset(asset, initial=False, run_id=None)
+
+    refreshed = repository.get_asset_by_symbol("^GSPC")
+    assert refreshed is not None
+    assert refreshed.asset_type == "Index"
 
 
 def test_sync_all_reports_partial_failures(repository: MarketRepository) -> None:
