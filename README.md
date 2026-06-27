@@ -5,6 +5,16 @@ cryptocurrencies, FX pairs, and futures. It downloads daily OHLCV data through Y
 stores it in SQLite, and presents performance, trend, momentum, and risk metrics across short,
 medium, and long horizons.
 
+![Market Horizon overview](assets/market-horizon.gif)
+
+## Philosophy
+
+Market Horizon is built to **monitor assets over the long term, not to encourage trading**. The
+goal is a minimalist dashboard that surfaces a few essential — but meaningful — short-, medium-,
+and long-term indicators, rather than overwhelming you with noise that invites frequent buying and
+selling. It is paired with a financial-education page that explains the basic concepts and every
+indicator used, so the numbers are understood rather than just consumed.
+
 This project is informational only. It does not provide trading recommendations, forecasts,
 broker integration, alerts, or portfolio accounting.
 
